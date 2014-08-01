@@ -1,37 +1,27 @@
 #!/usr/bin/python
 
 import sys, getopt, os.path, urllib2, socket
+import argparse
 
 def main(argv):
     inputfile = ''
     outputfile = 'log.txt'
     timeout = ''
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", dest="inputfile", required=True, help="path of the input file with urls lists")
+    parser.add_argument("-o", dest="outputfile", default="out.txt", help="path of the output log file, default out.txt")
+    parser.add_argument("-t", dest="timeout", default=10, help="timeout for the response in second, default 10")
+    parser.add_argument("-cookie", dest="cookie", default=None, help="add cookie sessioni to header")
+    args = parser.parse_args()
+    print args.cookie
 
-    try:
-      opts, args = getopt.getopt(argv,"hi:o:t:", ["help", "ifile=", "ofile=", "timeout="])
-    except getopt.GetoptError:
-      print '-i <inputfile> -t <timeout>'
-      sys.exit(2)
-
-    for opt, arg in opts:
-        if opt == '-h':
-            print 'crawler.py -i <urlfile> -o <outputlog> -t <timeout>'
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
-        elif opt in ("-t", "--timeout"):
-            timeout = arg
-        else:
-            print 'error parsing command'
-
-    if os.path.isfile(inputfile):
-        readFileLines(inputfile, outputfile, timeout)
+    if os.path.isfile(args.inputfile):
+        readFileLines(args.inputfile, args.outputfile, args.timeout, args.cookie)
     else: 
         print "input file doesn't exists"
 
-def readFileLines(inputfile, outputfile, timeout):
+def readFileLines(inputfile, outputfile, timeout, cookie):
     socket.setdefaulttimeout(float(timeout))
     fout = open(outputfile, 'w') 
     count = 0
@@ -42,8 +32,13 @@ def readFileLines(inputfile, outputfile, timeout):
         #numLines = len(rows)
 
         for row in rows:
-            req = urllib2.Request('http://www.google.it')
-            status = urllib2.urlopen(req).getcode()
+            req = urllib2.Request(row)
+            if cookie:
+                print "cookie present"
+                req.add_header("Cookie", cookie);
+            openUrl = urllib2.urlopen(req)
+            print openUrl.read()
+            status = openUrl.getcode()
             outstring =  str(row).rstrip("\n") + ' | status: ' + str(status) + "\n"
             print outstring.rstrip("\n")
             fout.write(outstring) 
